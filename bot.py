@@ -7,7 +7,7 @@ async def send_message(message, user_message, is_private):
     try:
         response = responses.get_response(user_message)
         await message.author.send(response) if is_private else await message.channel.send(response) # This format is fucking retarded but im following the tutorial
-
+        # I think to make it work with dms we need to change the if block of this statement. Since now it is just not doing anything if "is_private == true"
     except Exception as e:
         print(e)
 
