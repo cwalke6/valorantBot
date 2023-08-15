@@ -12,7 +12,8 @@ def get_response(message: str) -> str:
     
     if p_message == '!help':
         return '`Here is a link to the github page with a readme on how to use this bot: https://github.com/M4nchy/valorantBot`'
-    if p_message == ''
+    if p_message == '!login':
+        return 'login command'
     
 
 # If message not matched to above case will respond to every message
