@@ -1,4 +1,6 @@
+
 import random
+import requests
 
 def get_response(message: str) -> str:
     # python case sensitive so important to have this
@@ -18,6 +20,10 @@ def get_response(message: str) -> str:
 
     if p_message == '!stats':
         return 'stats command'
+    
+    if p_message == '!rank':
+        rank = requests.get('https://api.kyroskoh.xyz/valorant/v1/mmr/na/TRENTAKER4000/800mg')
+        return rank
     
 
 # If message not matched to above case will respond to every message
