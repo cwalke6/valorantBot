@@ -2,6 +2,13 @@
 import random
 import requests
 
+api_key = "YOUR_API_KEY"
+url = 'https://api.kyroskoh.xyz'
+
+headers = {
+    "Authorization": api_key,
+}
+
 def get_response(message: str) -> str:
     # python case sensitive so important to have this
     p_message = message.lower() 
@@ -22,7 +29,12 @@ def get_response(message: str) -> str:
         return 'stats command'
     
     if p_message == '!rank':
-        rank = requests.get('https://api.kyroskoh.xyz/valorant/v1/mmr/na/TRENTAKER4000/800mg')
+        #rank = requests.get(url+'/valorant/v1/mmr/na/TRENTAKER4000/800mg')
+        #rank = requests.get('http://ip.jsontest.com/')
+        rank = requests.get(url+'/valorant/v1/esports/schedule')
+        print("rank: ", rank)
+        print("rank JSON: ", rank.json())
+        print("rank plain text: ", rank.text)
         return rank
     
 
