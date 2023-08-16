@@ -31,4 +31,4 @@ def get_response(message: str, userID) -> str:
         return 'Username:' + valorantUsername + 'tag:' + valorantTag
 
 # If message not matched to above case will respond to every message
-    return "Unrecognized Command"
+    return None
