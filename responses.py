@@ -12,8 +12,6 @@ def get_response(message: str) -> str:
     
     if p_message == '!help':
         return '`Here is a link to the github page with a readme on how to use this bot: https://github.com/M4nchy/valorantBot`'
-    if p_message == ''
-    
 
 # If message not matched to above case will respond to every message
 # Maybe look for a better way to implement this not just "return None" since that gives an error in terminal.
