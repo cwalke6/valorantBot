@@ -30,32 +30,33 @@ def get_response(message: str) -> str:
         return embed
     
     if p_message == '!login':
-
         return 'login command'
 
     if p_message[:6] == '!stats':
-        # !stats na TRENTAKER4000#800mg competitive ascent
-        affinity = ''
-        if(p_message[7:9] == 'na'):
-            affinity = p_message[7:9]
-            usernameAndTagAndExtras = p_message[10:].split('#')
-        elif(p_message[7:9] == 'eu'):
-            affinity = p_message[7:9]
-            usernameAndTagAndExtras = p_message[10:].split('#')
-        elif(p_message[7:9] == 'kr'):
-            affinity = p_message[7:9]
-            usernameAndTagAndExtras = p_message[10:].split('#')
-
-        valorantUsername = usernameAndTagAndExtras[0]
-        usernameAndTagAndExtras = usernameAndTagAndExtras[1].split()
-        valorantTag = usernameAndTagAndExtras[0]
-
+        # Need to add latam and br catches
+        command = p_message.split('#')
+        list1 = command[0].split()
+        list2 = command[1].split()
+        usernameAndTagAndExtras = list1 + list2
+        affinity = usernameAndTagAndExtras[1]
+        valorantUsername = usernameAndTagAndExtras[2]
+        valorantTag = usernameAndTagAndExtras[3]
+        gamesPulled = 5
         gamemode = ''
-        if(len(usernameAndTagAndExtras) > 1):
-            gamemode = usernameAndTagAndExtras[1]
+
+        if(len(usernameAndTagAndExtras) > 4):
+            if(len(usernameAndTagAndExtras[4]) != 2 and len(usernameAndTagAndExtras[4]) != 1):
+                gamemode = usernameAndTagAndExtras[4]
+            elif(len(usernameAndTagAndExtras[4]) == 2 or len(usernameAndTagAndExtras[4]) == 1):
+                gamesPulled = usernameAndTagAndExtras[4]
         gameMap = ''
-        if(len(usernameAndTagAndExtras) > 2):
-            gameMap = usernameAndTagAndExtras[2]
+        if(len(usernameAndTagAndExtras) > 5):
+            if(len(usernameAndTagAndExtras[5]) != 2 and len(usernameAndTagAndExtras[5]) != 1):
+                gameMap = usernameAndTagAndExtras[5]
+            elif(len(usernameAndTagAndExtras[5]) == 2 or len(usernameAndTagAndExtras[5]) == 1):
+                gamesPulled = usernameAndTagAndExtras[5]
+        if(len(usernameAndTagAndExtras) > 6):
+            gamesPulled = usernameAndTagAndExtras[6]
 
         accountMessage = requests.get(url+'/valorant/v1/account/' + valorantUsername + '/' + valorantTag, headers=headers)
 
@@ -63,19 +64,31 @@ def get_response(message: str) -> str:
         puuid = accountMessage['data']['puuid']
 
         # Need to add if statements here for type of game mode, page number, and size etc
-        if(gamemode == ''):
-            statsMessage = requests.get(url+ '/valorant/v3/by-puuid/matches/' + affinity + '/' + puuid, headers=headers)
-        elif(gamemode != '' and gameMap == ''):
-            statsMessage = requests.get(url+'/valorant/v3/by-puuid/matches/' + affinity + '/' + puuid + '?mode=' + gamemode, headers=headers)
-        elif(gamemode != '' and gameMap != ''):
-            statsMessage = requests.get(url+'/valorant/v3/by-puuid/matches/' + affinity + '/' + puuid, + '?mode=' + gamemode, headers=headers)
+        # For additional Queries add &<QUERY NAME>=<VALUE> to url
 
-        mapsList = []
-        
+        if(gamemode == '' and gameMap == '' and gamesPulled == 5):
+            statsMessage = requests.get(url+ '/valorant/v3/by-puuid/matches/' + affinity + '/' + puuid, headers=headers)
+        elif(gamemode == '' and gameMap == '' and gamesPulled != 5):
+            statsMessage = requests.get(url+'/valorant/v3/by-puuid/matches/' + affinity + '/' + puuid + '?size=' + gamesPulled, headers=headers)
+        elif(gamemode == '' and gameMap != '' and gamesPulled == 5):
+            statsMessage = requests.get(url+'/valorant/v3/by-puuid/matches/' + affinity + '/' + puuid + '?map=' + gameMap, headers=headers)
+        elif(gamemode == '' and gameMap != '' and gamesPulled != 5):
+            statsMessage = requests.get(url+'/valorant/v3/by-puuid/matches/' + affinity + '/' + puuid + '?map=' + gameMap + '&size=' + gamesPulled, headers=headers)
+        elif(gamemode != '' and gameMap == '' and gamesPulled == 5):
+            statsMessage = requests.get(url+'/valorant/v3/by-puuid/matches/' + affinity + '/' + puuid + '?mode=' + gamemode, headers=headers)
+        elif(gamemode != '' and gameMap == '' and gamesPulled != 5):
+            statsMessage = requests.get(url+'/valorant/v3/by-puuid/matches/' + affinity + '/' + puuid + '?mode=' + gamemode + '&size=' + gamesPulled, headers=headers)
+        elif(gamemode != '' and gameMap != '' and gamesPulled == 5):
+            statsMessage = requests.get(url+'/valorant/v3/by-puuid/matches/' + affinity + '/' + puuid + '?mode=' + gamemode + '&map=' + gameMap, headers=headers)            
+        elif(gamemode != '' and gameMap != '' and gamesPulled != 5):
+            statsMessage = requests.get(url+'/valorant/v3/by-puuid/matches/' + affinity + '/' + puuid + '?mode=' + gamemode + '&map=' + gameMap + '&size=' + gamesPulled, headers=headers)
+
+        mapsList, roundsPlayedList = [], []
         statsMessage = statsMessage.json()
 
         for data in statsMessage['data']:
             mapsList.append(data['metadata']['map'])
+            roundsPlayedList.append(data['metadata']['rounds_played'])
 
         userPlayerCard = ''
         # userAgentImage = statsMessage['data'][0]['players']['all_players'][0]['assets']['agent']['small']
@@ -83,28 +96,66 @@ def get_response(message: str) -> str:
             for player in statsMessage['data'][0]['players']['all_players']:
                 if player['puuid'] == puuid:
                     userPlayerCard = player['assets']['card']['small']
-        userTotalKills = 0
-        userTotalDeaths = 0
-        userTotalAssists = 0
+
+        userKillsList, userDeathsList, userAssistsList, userAgentList, userScoreList = [], [], [], [], []
+        userTotalKills, userTotalDeaths, userTotalAssists, userAvgKills, userAvgDeaths, userAvgAssists, userAvgScore, matchesPulled = 0, 0, 0, 0, 0, 0, 0, 5
+        matchesPulled = 5
 
         for data in statsMessage['data']:
             for player in data['players']['all_players']:
                 if player['puuid'] == puuid:
+                    userKillsList.append(player['stats']['kills'])
                     userTotalKills += player['stats']['kills']
+                    userDeathsList.append(player['stats']['deaths'])
                     userTotalDeaths += player['stats']['deaths']
+                    userAssistsList.append(player['stats']['kills'])
                     userTotalAssists += player['stats']['deaths']
-
+                    userAgentList.append(player['character'])
+                    userScoreList.append(player['stats']['score'])
+        for i in range(len(userScoreList)):
+            userAvgScore += (userScoreList[i] / roundsPlayedList[i])
+        userAvgScore /= matchesPulled
+        userAvgScore = round(userAvgScore, 0)
         userTotalKDA = (userTotalKills + userTotalAssists) / userTotalDeaths
         userTotalKDA = round(userTotalKDA, 2)
+        userTotalKD = (userTotalKills / userTotalDeaths)
+        userTotalKD = round(userTotalKD, 2)
+        userAvgKills = userTotalKills / matchesPulled
+        userAvgDeaths = userTotalDeaths / matchesPulled
+        userAvgAssists = userTotalAssists / matchesPulled
 
-        embed = discord.Embed(title= 'Recent Stats of: ' + valorantUsername + '#' + valorantTag,
-                              description= 'Recent Maps: ' + str(mapsList) + '\n'
-                              'Mode: ' + gamemode + '\n'
-                              'Total Kills: ' + str(userTotalKills) + '\n'
-                              'Total Deaths: ' + str(userTotalDeaths) + '\n'
-                              'Total Assists: ' + str(userTotalAssists) + '\n'
-                              'KDA: ' + str(userTotalKDA) + '\n', 
-                              color=0xFF5733)
+        if(gamemode != ''):
+            embed = discord.Embed(title= 'Recent Stats of: ' + valorantUsername + '#' + valorantTag,
+                                    description= 'Mode: ' + gamemode + '\n'
+                                    'Recent Maps:      ' + str(mapsList) + '\n'
+                                    'Agent per game:   ' + str(userAgentList) + '\n'
+                                    'Kills per game:   ' + str(userKillsList) + '\n'
+                                    'Deaths per game:  ' + str(userDeathsList) + '\n'
+                                    'Assists per game: ' +str(userAssistsList) + '\n'
+                                    'Match Average \n'
+                                    'Average ACS: ' + str(userAvgScore) + '\n'
+                                    'Average Kills: ' + str(userAvgKills) +
+                                    ' Average Deaths: ' + str(userAvgDeaths) +
+                                    ' Average Assists: ' + str(userAvgAssists) + '\n'
+                                    'KD:  ' + str(userTotalKD) + '\n'
+                                    'KDA: ' + str(userTotalKDA) + '\n', 
+                                    color=0xFF5733)
+        else:
+            embed = discord.Embed(title= 'Recent Stats of: ' + valorantUsername + '#' + valorantTag,
+                                    description= 'Mode: All' + '\n'
+                                    'Recent Maps:      ' + str(mapsList) + '\n'
+                                    'Agent per game:   ' + str(userAgentList) + '\n'
+                                    'Kills per game:   ' + str(userKillsList) + '\n'
+                                    'Deaths per game:  ' + str(userDeathsList) + '\n'
+                                    'Assists per game: ' +str(userAssistsList) + '\n'
+                                    'Match Average \n'
+                                    'Average ACS: ' + str(userAvgScore) + '\n'
+                                    'Average Kills: ' + str(userAvgKills) +
+                                    ' Average Deaths: ' + str(userAvgDeaths) +
+                                    ' Average Assists: ' + str(userAvgAssists) + '\n'
+                                    'KD:  ' + str(userTotalKD) + '\n'
+                                    'KDA: ' + str(userTotalKDA) + '\n', 
+                                    color=0xFF5733)
 
         embed.set_thumbnail(url=userPlayerCard)
 
@@ -116,7 +167,6 @@ def get_response(message: str) -> str:
         valorantUsername = usernameAndTag[0]
         valorantTag = usernameAndTag[2]
         accountMessage = json.loads(requests.get(url+'/valorant/v1/account/' + valorantUsername + '/' + valorantTag).text)
-        print(url+'/valorant/v1/account/' + valorantUsername + '/' + valorantTag)
         puuid = accountMessage['data']['puuid']
 
         mmrMessage = json.loads(requests.get(url+'/valorant/v1/by-puuid/mmr/na/' + puuid).text)
