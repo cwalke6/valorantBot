@@ -1,3 +1,4 @@
+import agentIconsDict
 import bot
 import discord
 import random
@@ -124,6 +125,12 @@ def get_response(message: str) -> str:
         userAvgDeaths = userTotalDeaths / matchesPulled
         userAvgAssists = userTotalAssists / matchesPulled
 
+        # set all agent names to their discord emoji equivalent
+        for i in range(len(userAgentList)):
+            userAgentList[i] = agentIconsDict.agentIcons[userAgentList[i].lower()]
+        userAgentList = str(userAgentList)[1:-1]
+        userAgentList = userAgentList.replace('\'', '')
+
         if(gamemode != ''):
             embed = discord.Embed(title= 'Recent Stats of: ' + valorantUsername + '#' + valorantTag,
                                     description= 'Mode: ' + gamemode + '\n'
@@ -132,7 +139,7 @@ def get_response(message: str) -> str:
                                     'Kills per game:   ' + str(userKillsList) + '\n'
                                     'Deaths per game:  ' + str(userDeathsList) + '\n'
                                     'Assists per game: ' +str(userAssistsList) + '\n'
-                                    'Match Average \n'
+                                    '### __**Match Average**__ \n'
                                     'Average ACS: ' + str(userAvgScore) + '\n'
                                     'Average Kills: ' + str(userAvgKills) +
                                     ' Average Deaths: ' + str(userAvgDeaths) +
@@ -148,7 +155,7 @@ def get_response(message: str) -> str:
                                     'Kills per game:   ' + str(userKillsList) + '\n'
                                     'Deaths per game:  ' + str(userDeathsList) + '\n'
                                     'Assists per game: ' +str(userAssistsList) + '\n'
-                                    'Match Average \n'
+                                    '### __**Match Average**__ \n'
                                     'Average ACS: ' + str(userAvgScore) + '\n'
                                     'Average Kills: ' + str(userAvgKills) +
                                     ' Average Deaths: ' + str(userAvgDeaths) +
@@ -185,6 +192,29 @@ def get_response(message: str) -> str:
         
 
         return matchHistoryMessage.text
+    
+    if p_message[:12] == '!careerstats':
+        # /valorant/v1/lifetime/matches/{affinity}/{name}/{tag}
+        command = p_message.split('#')
+        list1 = command[0].split()
+        list2 = command[1].split()
+        usernameAndTagAndExtras = list1 + list2
+        affinity = usernameAndTagAndExtras[1]
+        valorantUsername = usernameAndTagAndExtras[2]
+        valorantTag = usernameAndTagAndExtras[3]
+
+        # TO DO: Add if statements to change the url depending on queueries in the command line
+
+        careerMessage = requests.get(url+'/valorant/v1/lifetime/matches/' + affinity + '/' + valorantUsername + '/' + valorantTag)
+
+
+    if p_message[:5] == '!test':
+        embed = discord.Embed(title='__**Match Averages:**__',
+                              description= agentIconsDict.agentIcons['deadlock'] + '\n'
+                              '# __**Header 1**__' + '\n'
+                              '## Header 2' + '\n')
+
+        return embed
     
 
 
