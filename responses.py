@@ -203,9 +203,27 @@ def get_response(message: str) -> str:
         valorantUsername = usernameAndTagAndExtras[2]
         valorantTag = usernameAndTagAndExtras[3]
 
-        # TO DO: Add if statements to change the url depending on queueries in the command line
+        gamemode = ''
+        if(len(usernameAndTagAndExtras) > 4):
+            gamemode = usernameAndTagAndExtras[4]
 
-        careerMessage = requests.get(url+'/valorant/v1/lifetime/matches/' + affinity + '/' + valorantUsername + '/' + valorantTag)
+        # TO DO: Add if statements to change the url depending on queueries in the command line
+        # Only two options are gamemode and map
+
+        if gamemode == '':
+            careerMessage = requests.get(url+'/valorant/v1/lifetime/matches/' + affinity + '/' + valorantUsername + '/' + valorantTag)
+        else:
+            careerMessage = requests.get(url+'/valorant/v1/lifetime/matches/' + affinity + '/' + valorantUsername + '/' + valorantTag + '?=mode' + gamemode)
+        careerMessage = careerMessage.json()
+
+        for data in careerMessage['data']:
+            
+
+
+        embed = discord.Embed()
+
+        return embed
+
 
 
     if p_message[:5] == '!test':
