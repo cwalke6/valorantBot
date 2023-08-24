@@ -1,11 +1,21 @@
 import discord
 import responses
+import messageSettings
 
 async def send_message(message, user_message, is_private):
     try:
         response = responses.get_response(user_message)
         #await message.channel.send(embed=response)
-        await message.author.send(embed=response) if is_private else await message.channel.send(embed=response)
+        if(messageSettings.hasEmbed and messageSettings.hasButtons):
+            await message.author.send(embed=messageSettings.embed, components = messageSettings.buttons) if is_private else await message.channel.send(messageSettings.embed, components=messageSettings.buttons)
+        elif(messageSettings.hasEmbed):
+            await message.author.send(embed=messageSettings.embed) if is_private else await message.channel.send(embed=messageSettings.embed)
+        elif(messageSettings.hasButtons):
+            None
+        else:
+            None
+        messageSettings.hasEmbed = False
+        messageSettings.hasButtons = False
         # I think to make it work with dms we need to change the if block of this statement. Since now it is just not doing anything if "is_private == true"
     except Exception as e:
         print(e)

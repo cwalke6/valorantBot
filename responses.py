@@ -5,11 +5,13 @@ import random
 import requests
 import re
 import json
+import messageSettings
 
 
 api_key = "HDEV-390054ce-97c2-4ab1-bc0b-96fac25d03f7"
 urlAlt = 'https://api.kyroskoh.xyz'
 url = 'https://api.henrikdev.xyz'
+trackerggUrl = 'https://tracker.gg/valorant/match/'
 headers = {'Accept': 'application/json'}
 
 headers = {
@@ -22,13 +24,13 @@ def get_response(message: str) -> str:
 
     
     if p_message == 'roll':
-        embed = discord.Embed(title=random.randint(1,6))
-        return embed
+        messageSettings.embed = discord.Embed(title=random.randint(1,6))
+        return None
     
     if p_message == '!help':
-        embed = discord.Embed(title='Click here for documentation',url='https://github.com/M4nchy/valorantBot')
+        messageSettings.embed = discord.Embed(title='Click here for documentation',url='https://github.com/M4nchy/valorantBot')
         # Need to work on actual documentation for the bot
-        return embed
+        return None
     
     if p_message == '!login':
         return 'login command'
@@ -132,7 +134,7 @@ def get_response(message: str) -> str:
         userAgentList = userAgentList.replace('\'', '')
 
         if(gamemode != ''):
-            embed = discord.Embed(title= 'Recent Stats of: ' + valorantUsername + '#' + valorantTag,
+            messageSettings.embed = discord.Embed(title= 'Recent Stats of: ' + valorantUsername + '#' + valorantTag,
                                     description= 'Mode: ' + gamemode + '\n'
                                     'Recent Maps:      ' + str(mapsList) + '\n'
                                     'Agent per game:   ' + str(userAgentList) + '\n'
@@ -148,7 +150,7 @@ def get_response(message: str) -> str:
                                     'KDA: ' + str(userTotalKDA) + '\n', 
                                     color=0xFF5733)
         else:
-            embed = discord.Embed(title= 'Recent Stats of: ' + valorantUsername + '#' + valorantTag,
+            messageSettings.embed = discord.Embed(title= 'Recent Stats of: ' + valorantUsername + '#' + valorantTag,
                                     description= 'Mode: All' + '\n'
                                     'Recent Maps:      ' + str(mapsList) + '\n'
                                     'Agent per game:   ' + str(userAgentList) + '\n'
@@ -164,25 +166,30 @@ def get_response(message: str) -> str:
                                     'KDA: ' + str(userTotalKDA) + '\n', 
                                     color=0xFF5733)
 
-        embed.set_thumbnail(url=userPlayerCard)
+        messageSettings.embed.set_thumbnail(url=userPlayerCard)
 
-        return embed
+        return None
     
     
     if p_message[:11] == '!rankofuser':
-        usernameAndTag = p_message[12:].partition('#')
-        valorantUsername = usernameAndTag[0]
-        valorantTag = usernameAndTag[2]
+        command = p_message.split('#')
+        list1 = command[0].split()
+        list2 = command[1].split()
+        usernameAndTagAndExtras = list1 + list2
+        affinity = usernameAndTagAndExtras[1]
+        valorantUsername = usernameAndTagAndExtras[2]
+        valorantTag = usernameAndTagAndExtras[3]
+
         accountMessage = json.loads(requests.get(url+'/valorant/v1/account/' + valorantUsername + '/' + valorantTag).text)
         puuid = accountMessage['data']['puuid']
 
         mmrMessage = json.loads(requests.get(url+'/valorant/v1/by-puuid/mmr/na/' + puuid).text)
-
-        embed = discord.Embed(title=valorantUsername + '#' + valorantTag + ' Rank', description=mmrMessage['data']['currenttierpatched']
+        messageSettings.embed = discord.Embed(title=valorantUsername + '#' + valorantTag + ' Rank', description=mmrMessage['data']['currenttierpatched']
                               + ' ' + str(mmrMessage['data']['ranking_in_tier']) + " RR", color=0xFF5733)
-        embed.set_thumbnail(url=mmrMessage['data']['images']['large'])
+        messageSettings.embed.set_thumbnail(url=mmrMessage['data']['images']['large'])
+        messageSettings.hasEmbed = True
 
-        return embed
+        return None
 
     if p_message[:13] == '!matchhistory':
         usernameAndTag = p_message[14:].partition('#')
@@ -213,35 +220,56 @@ def get_response(message: str) -> str:
         if gamemode == '':
             careerMessage = requests.get(url+'/valorant/v1/lifetime/matches/' + affinity + '/' + valorantUsername + '/' + valorantTag)
         else:
-            careerMessage = requests.get(url+'/valorant/v1/lifetime/matches/' + affinity + '/' + valorantUsername + '/' + valorantTag + '?=mode' + gamemode)
+            careerMessage = requests.get(url+'/valorant/v1/lifetime/matches/' + affinity + '/' + valorantUsername + '/' + valorantTag + '?mode=' + gamemode)
         careerMessage = careerMessage.json()
 
+        matchIDList = []
+        totalShots = 0
+        headShots = 0
+        headshotPercentage = 0
+
         for data in careerMessage['data']:
-            
+            matchIDList.append(data['meta']['id'])
+            totalShots += data['stats']['shots']['head']
+            headShots += data['stats']['shots']['head']
+            totalShots += data['stats']['shots']['body']
+            totalShots += data['stats']['shots']['leg']
 
+        trackerggUrlList = []
 
-        embed = discord.Embed()
+        for id in matchIDList:
+            matchUrl = trackerggUrl + id
+            trackerggUrlList.append(matchUrl)
 
-        return embed
+        headshotPercentage = (headShots / totalShots)
+        headshotPercentage *= 100
+        headshotPercentage = str(round(headshotPercentage, 0))
+        headshotPercentage = headshotPercentage.rstrip('0')
+        headshotPercentage = headshotPercentage[:-1]
+        
+
+        messageSettings.embed = discord.Embed(title='**Career Stats**',
+                              description='Matches: ' + '\n'
+                              'HS%: ' + str(headshotPercentage) + '\n')
+        messageSettings.hasEmbed = True
+
+        return None
 
 
 
     if p_message[:5] == '!test':
-        embed = discord.Embed(title='__**Match Averages:**__',
+        messageSettings.embed = discord.Embed(title='__**Match Averages:**__',
                               description= agentIconsDict.agentIcons['deadlock'] + '\n'
                               '# __**Header 1**__' + '\n'
                               '## Header 2' + '\n')
+        messageSettings.hasEmbed = True
+        messageSettings.hasButton = True
+        return None
 
-        return embed
-    
-
-
+    return None
 
 def returnRankIcon(puuid):
     mmrMessage = json.loads(requests.get(url+'/valorant/v1/by-puuid/mmr/na/' + puuid).text)
     print(mmrMessage['data']['images']['small'])
     return mmrMessage['data']['images']['small']
 
-# If message not matched to above case will respond to every message
-# Maybe look for a better way to implement this not just "return None" since that gives an error in terminal.
-    return None 
