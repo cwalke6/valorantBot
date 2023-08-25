@@ -13,7 +13,7 @@ async def send_message(message, user_message, is_private):
         elif(messageSettings.hasButtons):
             None
         else:
-            None
+            await message.author.send(response)
         messageSettings.hasEmbed = False
         messageSettings.hasButtons = False
         # I think to make it work with dms we need to change the if block of this statement. Since now it is just not doing anything if "is_private == true"

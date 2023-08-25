@@ -1,4 +1,4 @@
-import agentIconsDict
+import valorantImages
 import bot
 import discord
 import random
@@ -7,6 +7,7 @@ import re
 import json
 import messageSettings
 
+from discord.ui import View, Button
 
 api_key = "HDEV-390054ce-97c2-4ab1-bc0b-96fac25d03f7"
 urlAlt = 'https://api.kyroskoh.xyz'
@@ -37,29 +38,35 @@ def get_response(message: str) -> str:
 
     if p_message[:6] == '!stats':
         # Need to add latam and br catches
-        command = p_message.split('#')
-        list1 = command[0].split()
-        list2 = command[1].split()
-        usernameAndTagAndExtras = list1 + list2
-        affinity = usernameAndTagAndExtras[1]
-        valorantUsername = usernameAndTagAndExtras[2]
-        valorantTag = usernameAndTagAndExtras[3]
-        gamesPulled = 5
+        valorantUsername = ''
+        gameMap = ''
         gamemode = ''
 
-        if(len(usernameAndTagAndExtras) > 4):
-            if(len(usernameAndTagAndExtras[4]) != 2 and len(usernameAndTagAndExtras[4]) != 1):
-                gamemode = usernameAndTagAndExtras[4]
-            elif(len(usernameAndTagAndExtras[4]) == 2 or len(usernameAndTagAndExtras[4]) == 1):
-                gamesPulled = usernameAndTagAndExtras[4]
-        gameMap = ''
-        if(len(usernameAndTagAndExtras) > 5):
-            if(len(usernameAndTagAndExtras[5]) != 2 and len(usernameAndTagAndExtras[5]) != 1):
-                gameMap = usernameAndTagAndExtras[5]
-            elif(len(usernameAndTagAndExtras[5]) == 2 or len(usernameAndTagAndExtras[5]) == 1):
-                gamesPulled = usernameAndTagAndExtras[5]
-        if(len(usernameAndTagAndExtras) > 6):
-            gamesPulled = usernameAndTagAndExtras[6]
+        allList = p_message[7:].partition('#')
+
+        # Do it this way in order to incorporate spaces in usernames
+        usernameList = allList[0].split()
+        for i in range(1, len(usernameList)):
+            valorantUsername += usernameList[i] + ' '
+        valorantUsername = valorantUsername[:-1]
+
+        affinity = usernameList[0]
+
+        valorantTagAndExtras = allList[2].split()
+        valorantTag = valorantTagAndExtras[0]
+        if len(valorantTagAndExtras) > 1:
+            if len(valorantTagAndExtras[1]) == 1 or len(valorantTagAndExtras[1]) == 2:
+                gamesPulled = valorantTagAndExtras[1]
+            else:
+                gamemode = valorantTagAndExtras[1]
+        if len(valorantTagAndExtras) > 2:
+            if len(valorantTagAndExtras[2]) == 1 or len(valorantTagAndExtras[2]) == 2:
+                gamesPulled = valorantTagAndExtras[2]
+            else:
+                gameMap = valorantTagAndExtras[2]
+        if len(valorantTagAndExtras) > 3:
+            gamesPulled = valorantTagAndExtras[3]
+        gamesPulled = 5
 
         accountMessage = requests.get(url+'/valorant/v1/account/' + valorantUsername + '/' + valorantTag, headers=headers)
 
@@ -129,7 +136,7 @@ def get_response(message: str) -> str:
 
         # set all agent names to their discord emoji equivalent
         for i in range(len(userAgentList)):
-            userAgentList[i] = agentIconsDict.agentIcons[userAgentList[i].lower()]
+            userAgentList[i] = valorantImages.agentIcons[userAgentList[i].lower()]
         userAgentList = str(userAgentList)[1:-1]
         userAgentList = userAgentList.replace('\'', '')
 
@@ -167,23 +174,40 @@ def get_response(message: str) -> str:
                                     color=0xFF5733)
 
         messageSettings.embed.set_thumbnail(url=userPlayerCard)
+        messageSettings.hasEmbed = True
 
         return None
     
     
     if p_message[:11] == '!rankofuser':
-        command = p_message.split('#')
-        list1 = command[0].split()
-        list2 = command[1].split()
-        usernameAndTagAndExtras = list1 + list2
-        affinity = usernameAndTagAndExtras[1]
-        valorantUsername = usernameAndTagAndExtras[2]
-        valorantTag = usernameAndTagAndExtras[3]
+        valorantUsername = ''
+        allList = p_message[13:].partition('#')
 
-        accountMessage = json.loads(requests.get(url+'/valorant/v1/account/' + valorantUsername + '/' + valorantTag).text)
+        # Do it this way in order to incorporate spaces in usernames
+        usernameList = allList[0].split()
+        for i in range(1, len(usernameList)):
+            valorantUsername += usernameList[i] + ' '
+        valorantUsername = valorantUsername[:-1]
+
+        affinity = usernameList[0]
+
+        valorantTagAndExtras = allList[2].split()
+        valorantTag = valorantTagAndExtras[0]
+        if len(valorantTagAndExtras) > 1:
+            if len(valorantTagAndExtras[1]) == 1 or len(valorantTagAndExtras[1]) == 2:
+                size = valorantTagAndExtras[1]
+            else:
+                gamemode = valorantTagAndExtras[1]
+        if len(valorantTagAndExtras) > 2:
+            if len(valorantTagAndExtras[2]) == 1 or len(valorantTagAndExtras[2]) == 2:
+                size = valorantTagAndExtras[2]
+            else:
+                gamemode = valorantTagAndExtras[2]
+
+        accountMessage = json.loads(requests.get(url+'/valorant/v1/account/' + valorantUsername + '/' + valorantTag).text, headers=headers)
         puuid = accountMessage['data']['puuid']
 
-        mmrMessage = json.loads(requests.get(url+'/valorant/v1/by-puuid/mmr/na/' + puuid).text)
+        mmrMessage = json.loads(requests.get(url+'/valorant/v1/by-puuid/mmr/na/' + puuid).text, headers=headers)
         messageSettings.embed = discord.Embed(title=valorantUsername + '#' + valorantTag + ' Rank', description=mmrMessage['data']['currenttierpatched']
                               + ' ' + str(mmrMessage['data']['ranking_in_tier']) + " RR", color=0xFF5733)
         messageSettings.embed.set_thumbnail(url=mmrMessage['data']['images']['large'])
@@ -192,35 +216,258 @@ def get_response(message: str) -> str:
         return None
 
     if p_message[:13] == '!matchhistory':
-        usernameAndTag = p_message[14:].partition('#')
-        valorantUsername = usernameAndTag[0]
-        valorantTag = usernameAndTag[2]
-        matchHistoryMessage = json.loads(requests.get(url+'/valorant/v3/matches/na/' + valorantUsername + '/' + valorantTag))
-        
+        # make all one line
+        matchIDList = []
+        trackerggUrlList = []
+        agentList = []
+        mapList = []
+        playerTeamList = []
+        playerMatchRecord = []
+        redTeamWins = []
+        blueTeamWins = []
+        killsList = []
+        deathsList = []
+        assistsList = []
 
-        return matchHistoryMessage.text
+        valorantUsername = ''
+        gamemode = ''
+        embedTitle = '**Match History**'
+        embedDescription = ''
+        roundTeamWinsIndex = -1
+
+        allList = p_message[14:].partition('#')
+
+        # Do it this way in order to incorporate spaces in usernames
+        usernameList = allList[0].split()
+        for i in range(1, len(usernameList)):
+            valorantUsername += usernameList[i] + ' '
+        valorantUsername = valorantUsername[:-1]
+
+        affinity = usernameList[0]
+
+        valorantTagAndExtras = allList[2].split()
+        valorantTag = valorantTagAndExtras[0]
+        if len(valorantTagAndExtras) > 1:
+            if len(valorantTagAndExtras[1]) == 1 or len(valorantTagAndExtras[1]) == 2:
+                size = valorantTagAndExtras[1]
+            else:
+                gamemode = valorantTagAndExtras[1]
+        if len(valorantTagAndExtras) > 2:
+            if len(valorantTagAndExtras[2]) == 1 or len(valorantTagAndExtras[2]) == 2:
+                size = valorantTagAndExtras[2]
+            else:
+                gamemode = valorantTagAndExtras[2]
+
+        accountMessage = json.loads(requests.get(url+'/valorant/v1/account/' + valorantUsername + '/' + valorantTag).text, headers=headers)
+        puuid = accountMessage['data']['puuid']
+
+        if gamemode == '':
+            matchHistoryMessage = requests.get(url+'/valorant/v3/matches/' + affinity + '/' + valorantUsername + '/' + valorantTag + '?size=10', headers=headers)
+        else:
+            matchHistoryMessage = requests.get(url+'/valorant/v3/matches/' + affinity + '/' + valorantUsername + '/' + valorantTag + '?mode=' + gamemode + '&size=10', headers=headers)
+        matchHistoryMessage = matchHistoryMessage.json()
+
+        for match in matchHistoryMessage['data']:
+            matchIDList.append(match['metadata']['matchid'])
+            mapList.append(match['metadata']['map'])
+            for player in match['players']['all_players']:
+                if player['puuid'] == puuid:
+                    agentList.append(player['character'])
+                    playerTeamList.append(player['team'])
+                    killsList.append(player['stats']['kills'])
+                    deathsList.append(player['stats']['deaths'])
+                    assistsList.append(player['stats']['assists'])
+            roundTeamWinsIndex += 1
+            blueTeamWins.append(0)
+            redTeamWins.append(0)
+            for rounds in match['rounds']:
+                if rounds['winning_team'] == 'Blue':
+                    blueTeamWins[roundTeamWinsIndex] += 1
+                else:
+                    redTeamWins[roundTeamWinsIndex] += 1
+
+        for i in range(len(playerTeamList)):
+            if redTeamWins[i] > blueTeamWins[i]:
+                if(playerTeamList[i] == 'Red'):
+                    playerMatchRecord.append(':green_circle:')
+                else:
+                    playerMatchRecord.append(':red_circle:')
+            if redTeamWins[i] < blueTeamWins[i]:
+                if(playerTeamList[i] == 'Blue'):
+                    playerMatchRecord.append(':green_circle:')
+                else:
+                    playerMatchRecord.append(':red_circle:')
+
+        for i in range(len(agentList)):
+            agentList[i] = valorantImages.agentIcons[agentList[i].lower()]
+
+        for id in matchIDList:
+            matchUrl = trackerggUrl + id
+            trackerggUrlList.append(matchUrl)
+        for i in range(len(matchIDList)):
+            if i>8:
+                embedDescription += '**[Match ' + str(i+1) + '](' + trackerggUrlList[i] + ')** ' + ' | ' + playerMatchRecord[i] + ' | ' + mapList[i] + ' | ' + agentList[i] + ' | ' + str(redTeamWins[i]) + '-' + str(blueTeamWins[i]) + ' | ' + str(killsList[i]) + '/' + str(deathsList[i]) + '/' + str(assistsList[i]) + '\n'
+            else:
+                embedDescription += '**[Match ' + str(i+1) + '](' + trackerggUrlList[i] + ')** ' + ' | ' + playerMatchRecord[i] + ' | ' + mapList[i] + ' | ' + agentList[i] + ' | ' + str(redTeamWins[i]) + '-' + str(blueTeamWins[i]) + ' | ' + str(killsList[i]) + '/' + str(deathsList[i]) + '/' + str(assistsList[i]) + '\n'
+
+        embedDescription += '\n' + 'For detailed stats about a specific match use command: \n \"!match <region> username#tag <gamemode> <match number>\"'
+
+        messageSettings.embed = discord.Embed(title=embedTitle, description=embedDescription)
+        messageSettings.hasEmbed = True
+
+        return None
+    
+    if p_message[:6] == '!match':
+        # !match <affinity> <username>#<tag> {gamemode} {match to pull}
+        # Pulls whatever match and gamemode requested
+        # Should probably make this use the lifetime matches to be able to pull more than 10 matches.
+
+        gamemode = ''
+        embedTitle = '**Match Stats**'
+        embedDescription = ''
+        matchIndex, redTeamWins, blueTeamWins = 1, 0, 0
+        playerStatsDict = {}
+        tempPlayerpuuid = ''
+        playerpuuidList = []
+        valorantUsername = ''
+
+        allList = p_message[7:].partition('#')
+
+        # Do it this way in order to incorporate spaces in usernames
+        usernameList = allList[0].split()
+        for i in range(1, len(usernameList)):
+            valorantUsername += usernameList[i] + ' '
+        valorantUsername = valorantUsername[:-1]
+
+        affinity = usernameList[0]
+
+        valorantTagAndExtras = allList[2].split()
+        valorantTag = valorantTagAndExtras[0]
+        if len(valorantTagAndExtras) > 1:
+            if len(valorantTagAndExtras[1]) == 1 or len(valorantTagAndExtras[1]) == 2:
+                matchIndex = valorantTagAndExtras[1]
+            else:
+                gamemode = valorantTagAndExtras[1]
+        if len(valorantTagAndExtras) > 2:
+            if len(valorantTagAndExtras[2]) == 1 or len(valorantTagAndExtras[2]) == 2:
+                matchIndex = valorantTagAndExtras[2]
+            else:
+                gamemode = valorantTagAndExtras[2]
+
+        matchIndex = int(matchIndex)-1
+
+        if gamemode == '':
+            matchMessage = requests.get(url+'/valorant/v3/matches/' + affinity + '/' + valorantUsername + '/' + valorantTag + '?size=10', headers=headers)
+        else:
+            matchMessage = requests.get(url+'/valorant/v3/matches/' + affinity + '/' + valorantUsername + '/' + valorantTag + '?mode=' + gamemode + '&size=10', headers=headers)
+        matchMessage = matchMessage.json()
+
+        mapImage = valorantImages.mapIcons[matchMessage['data'][matchIndex]['metadata']['map']]
+        matchURL = trackerggUrl + matchMessage['data'][matchIndex]['metadata']['matchid']
+        embedDescription = '### **[Tracker.gg Match Link]('+matchURL+')**\n'
+
+        for player in matchMessage['data'][matchIndex]['players']['all_players']:
+            playerStatsList = []
+            tempPlayerpuuid = player['puuid']
+            playerpuuidList.append(tempPlayerpuuid) # MAy not need this
+            playerStatsList.append(player['name']) #0
+            playerStatsList.append(player['team']) #1
+            playerStatsList.append(player['character']) #2
+            playerStatsList.append(player['currenttier_patched']) #3
+            playerStatsList.append(player['stats']['kills']) #4
+            playerStatsList.append(player['stats']['deaths']) #5
+            playerStatsList.append(player['stats']['assists']) #6
+            playerStatsList.append(player['stats']['score']) #7
+            playerStatsDict[tempPlayerpuuid] = playerStatsList
+
+        for rounds in matchMessage['data'][matchIndex]['rounds']:
+            if rounds['winning_team'] == 'Red':
+                redTeamWins += 1
+            else:
+                blueTeamWins += 1
+        totalRounds = redTeamWins + blueTeamWins
+
+        if redTeamWins < blueTeamWins:
+            embedDescription += '**Rounds Won: ' + str(blueTeamWins) + '** :trophy:\n'
+        else:
+            embedDescription += '**Rounds Won: ' + str(blueTeamWins) + '** \n'
+
+        # Sort the dictionary by Score
+        playerStatsDict = dict(sorted(playerStatsDict.items(), key=lambda item: item[1][7], reverse=True))
+        first_key = next(iter(playerStatsDict))  # Get the first key
+
+        for key in playerStatsDict:
+            if playerStatsDict[key][1] == 'Blue':
+                tempName = playerStatsDict[key][0]
+                tempCharacter = valorantImages.agentIcons[playerStatsDict[key][2].lower()]
+                tempRank = playerStatsDict[key][3]
+                tempKills = playerStatsDict[key][4]
+                tempDeaths = playerStatsDict[key][5]
+                tempAssists = playerStatsDict[key][6]
+                tempScore = round(playerStatsDict[key][7] / totalRounds, 0)
+                if key == first_key:
+                    embedDescription += tempCharacter + ' | ' + tempName + ' | ' + tempRank + ' | ' +str(tempScore)[:-2] + ' | ' + str(tempKills) + '/'  + str(tempDeaths) + '/' + str(tempAssists) + ' :star:' +'\n'
+                else:
+                    embedDescription += tempCharacter + ' | ' + tempName + ' | ' + tempRank + ' | ' +str(tempScore)[:-2] + ' | ' + str(tempKills) + '/'  + str(tempDeaths) + '/' + str(tempAssists) +'\n'
+        embedDescription += '\n'
+        if redTeamWins < blueTeamWins:
+            embedDescription += '**Rounds Won: ' + str(redTeamWins) + '** : \n'
+        else:
+            embedDescription += '**Rounds Won: ' + str(redTeamWins) + '** :trophy:\n'
+        for key in playerStatsDict:
+            if playerStatsDict[key][1] == 'Red':
+                tempName = playerStatsDict[key][0]
+                tempCharacter = valorantImages.agentIcons[playerStatsDict[key][2].lower()]
+                tempRank = playerStatsDict[key][3]
+                tempKills = playerStatsDict[key][4]
+                tempDeaths = playerStatsDict[key][5]
+                tempAssists = playerStatsDict[key][6]
+                tempScore = round(playerStatsDict[key][7] / totalRounds, 0)
+                if key == first_key:
+                    embedDescription += tempCharacter + ' | ' + tempName + ' | ' + tempRank + ' | ' +str(tempScore)[:-2] + ' | ' + str(tempKills) + '/'  + str(tempDeaths) + '/' + str(tempAssists) + ' :star:' +'\n'
+                else:
+                    embedDescription += tempCharacter + ' | ' + tempName + ' | ' + tempRank + ' | ' +str(tempScore)[:-2] + ' | ' + str(tempKills) + '/'  + str(tempDeaths) + '/' + str(tempAssists) +'\n'
+        messageSettings.embed = discord.Embed(title=embedTitle, description=embedDescription)
+        messageSettings.hasEmbed = True
+        messageSettings.embed.set_thumbnail(url=mapImage)
+
+        return None
     
     if p_message[:12] == '!careerstats':
         # /valorant/v1/lifetime/matches/{affinity}/{name}/{tag}
-        command = p_message.split('#')
-        list1 = command[0].split()
-        list2 = command[1].split()
-        usernameAndTagAndExtras = list1 + list2
-        affinity = usernameAndTagAndExtras[1]
-        valorantUsername = usernameAndTagAndExtras[2]
-        valorantTag = usernameAndTagAndExtras[3]
-
         gamemode = ''
-        if(len(usernameAndTagAndExtras) > 4):
-            gamemode = usernameAndTagAndExtras[4]
+        valorantUsername = ''
+
+        allList = p_message[13:].partition('#')
+
+        # Do it this way in order to incorporate spaces in usernames
+        usernameList = allList[0].split()
+        for i in range(1, len(usernameList)):
+            valorantUsername += usernameList[i] + ' '
+        valorantUsername = valorantUsername[:-1]
+
+        affinity = usernameList[0]
+
+        valorantTagAndExtras = allList[2].split()
+        valorantTag = valorantTagAndExtras[0]
+        if len(valorantTagAndExtras) > 1:
+            if len(valorantTagAndExtras[1]) == 1 or len(valorantTagAndExtras[1]) == 2:
+                size = valorantTagAndExtras[1]
+            else:
+                gamemode = valorantTagAndExtras[1]
+        if len(valorantTagAndExtras) > 2:
+            if len(valorantTagAndExtras[2]) == 1 or len(valorantTagAndExtras[2]) == 2:
+                size = valorantTagAndExtras[2]
+            else:
+                gamemode = valorantTagAndExtras[2]
 
         # TO DO: Add if statements to change the url depending on queueries in the command line
-        # Only two options are gamemode and map
+        # Only two options are gamemode and size
 
         if gamemode == '':
-            careerMessage = requests.get(url+'/valorant/v1/lifetime/matches/' + affinity + '/' + valorantUsername + '/' + valorantTag)
+            careerMessage = requests.get(url+'/valorant/v1/lifetime/matches/' + affinity + '/' + valorantUsername + '/' + valorantTag, headers=headers)
         else:
-            careerMessage = requests.get(url+'/valorant/v1/lifetime/matches/' + affinity + '/' + valorantUsername + '/' + valorantTag + '?mode=' + gamemode)
+            careerMessage = requests.get(url+'/valorant/v1/lifetime/matches/' + affinity + '/' + valorantUsername + '/' + valorantTag + '?mode=' + gamemode, headers=headers)
         careerMessage = careerMessage.json()
 
         matchIDList = []
@@ -234,12 +481,6 @@ def get_response(message: str) -> str:
             headShots += data['stats']['shots']['head']
             totalShots += data['stats']['shots']['body']
             totalShots += data['stats']['shots']['leg']
-
-        trackerggUrlList = []
-
-        for id in matchIDList:
-            matchUrl = trackerggUrl + id
-            trackerggUrlList.append(matchUrl)
 
         headshotPercentage = (headShots / totalShots)
         headshotPercentage *= 100
@@ -258,18 +499,18 @@ def get_response(message: str) -> str:
 
 
     if p_message[:5] == '!test':
+        embedDescription = valorantImages.agentIcons['deadlock'] + '\n' + '#__**Header 1**__' + '\n' + '## Header 2' + '\n'
         messageSettings.embed = discord.Embed(title='__**Match Averages:**__',
-                              description= agentIconsDict.agentIcons['deadlock'] + '\n'
-                              '# __**Header 1**__' + '\n'
-                              '## Header 2' + '\n')
+                              description=embedDescription)
         messageSettings.hasEmbed = True
         messageSettings.hasButton = True
         return None
 
     return None
 
+
 def returnRankIcon(puuid):
-    mmrMessage = json.loads(requests.get(url+'/valorant/v1/by-puuid/mmr/na/' + puuid).text)
+    mmrMessage = json.loads(requests.get(url+'/valorant/v1/by-puuid/mmr/na/' + puuid).text, headers=headers)
     print(mmrMessage['data']['images']['small'])
     return mmrMessage['data']['images']['small']
 

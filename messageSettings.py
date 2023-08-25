@@ -7,6 +7,7 @@ hasEmbed = False
 hasButtons = False
 embed = discord.Embed()
 buttons = ''
+action_row = ''
 
 def getHasEmbed():
     return hasEmbed
