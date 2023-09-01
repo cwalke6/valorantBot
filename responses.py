@@ -111,8 +111,8 @@ def get_response(message: str) -> str:
                     userTotalKills += player['stats']['kills']
                     userDeathsList.append(player['stats']['deaths'])
                     userTotalDeaths += player['stats']['deaths']
-                    userAssistsList.append(player['stats']['kills'])
-                    userTotalAssists += player['stats']['deaths']
+                    userAssistsList.append(player['stats']['assists'])
+                    userTotalAssists += player['stats']['assists']
                     userAgentList.append(player['character'])
                     userScoreList.append(player['stats']['score'])
         for i in range(len(userScoreList)):
