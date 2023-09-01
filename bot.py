@@ -1,4 +1,5 @@
 import discord
+import json
 import responses
 import messageSettings
 
@@ -23,7 +24,10 @@ async def send_message(message, user_message, is_private):
 
 
 def run_discord_bot():
-    TOKEN = 'MTExODM2MTM0NjEyMDA5NzgzMw.GQnzDh.5rjjdmEVdnrQqSXKfBUrxBXM-5aSH06jN4ydEI'
+    with open("config.json", "r") as json_file:
+        data = json.load(json_file)
+
+    TOKEN = data["discord_token"]
     intents = discord.Intents.default() # Look for this as the first thing we might have to change for integration if we find problems
     intents.message_content = True
     client = discord.Client(intents=intents)

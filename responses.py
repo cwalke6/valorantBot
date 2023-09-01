@@ -1,9 +1,7 @@
 import valorantImages
-import bot
 import discord
 import random
 import requests
-import re
 import json
 import messageSettings
 
@@ -12,7 +10,8 @@ from discord.ui import View, Button
 api_key = "HDEV-390054ce-97c2-4ab1-bc0b-96fac25d03f7"
 urlAlt = 'https://api.kyroskoh.xyz'
 url = 'https://api.henrikdev.xyz'
-trackerggUrl = 'https://tracker.gg/valorant/match/'
+trackerggMatchUrl = 'https://tracker.gg/valorant/match/'
+trackerggPlayerUrl = 'https://tracker.gg/valorant/profile/riot/'
 headers = {'Accept': 'application/json'}
 
 headers = {
@@ -204,10 +203,10 @@ def get_response(message: str) -> str:
             else:
                 gamemode = valorantTagAndExtras[2]
 
-        accountMessage = json.loads(requests.get(url+'/valorant/v1/account/' + valorantUsername + '/' + valorantTag).text, headers=headers)
+        accountMessage = json.loads(requests.get(url+'/valorant/v1/account/' + valorantUsername + '/' + valorantTag).text)
         puuid = accountMessage['data']['puuid']
 
-        mmrMessage = json.loads(requests.get(url+'/valorant/v1/by-puuid/mmr/na/' + puuid).text, headers=headers)
+        mmrMessage = json.loads(requests.get(url+'/valorant/v1/by-puuid/mmr/na/' + puuid).text)
         messageSettings.embed = discord.Embed(title=valorantUsername + '#' + valorantTag + ' Rank', description=mmrMessage['data']['currenttierpatched']
                               + ' ' + str(mmrMessage['data']['ranking_in_tier']) + " RR", color=0xFF5733)
         messageSettings.embed.set_thumbnail(url=mmrMessage['data']['images']['large'])
@@ -227,7 +226,7 @@ def get_response(message: str) -> str:
         blueTeamWins = []
         killsList = []
         deathsList = []
-        assistsList = []
+        assistsList, scoresList = [], []
 
         valorantUsername = ''
         gamemode = ''
@@ -258,7 +257,7 @@ def get_response(message: str) -> str:
             else:
                 gamemode = valorantTagAndExtras[2]
 
-        accountMessage = json.loads(requests.get(url+'/valorant/v1/account/' + valorantUsername + '/' + valorantTag).text, headers=headers)
+        accountMessage = json.loads(requests.get(url+'/valorant/v1/account/' + valorantUsername + '/' + valorantTag).text)
         puuid = accountMessage['data']['puuid']
 
         if gamemode == '':
@@ -277,6 +276,7 @@ def get_response(message: str) -> str:
                     killsList.append(player['stats']['kills'])
                     deathsList.append(player['stats']['deaths'])
                     assistsList.append(player['stats']['assists'])
+                    scoresList.append(player['stats']['score'])
             roundTeamWinsIndex += 1
             blueTeamWins.append(0)
             redTeamWins.append(0)
@@ -285,6 +285,8 @@ def get_response(message: str) -> str:
                     blueTeamWins[roundTeamWinsIndex] += 1
                 else:
                     redTeamWins[roundTeamWinsIndex] += 1
+            scoresList[roundTeamWinsIndex] = scoresList[roundTeamWinsIndex] / (blueTeamWins[roundTeamWinsIndex] + redTeamWins[roundTeamWinsIndex])
+            scoresList[roundTeamWinsIndex] = round(scoresList[roundTeamWinsIndex])
 
         for i in range(len(playerTeamList)):
             if redTeamWins[i] > blueTeamWins[i]:
@@ -302,13 +304,13 @@ def get_response(message: str) -> str:
             agentList[i] = valorantImages.agentIcons[agentList[i].lower()]
 
         for id in matchIDList:
-            matchUrl = trackerggUrl + id
+            matchUrl = trackerggMatchUrl + id
             trackerggUrlList.append(matchUrl)
         for i in range(len(matchIDList)):
             if i>8:
-                embedDescription += '**[Match ' + str(i+1) + '](' + trackerggUrlList[i] + ')** ' + ' | ' + playerMatchRecord[i] + ' | ' + mapList[i] + ' | ' + agentList[i] + ' | ' + str(redTeamWins[i]) + '-' + str(blueTeamWins[i]) + ' | ' + str(killsList[i]) + '/' + str(deathsList[i]) + '/' + str(assistsList[i]) + '\n'
+                embedDescription += '**[Match ' + str(i+1) + '](' + trackerggUrlList[i] + ')** ' + ' | ' + playerMatchRecord[i] + ' | ' + mapList[i] + ' | ' + agentList[i] + ' | ' + str(redTeamWins[i]) + '-' + str(blueTeamWins[i]) + ' | ' + str(scoresList[i]) + ' | ' + str(killsList[i]) + '/' + str(deathsList[i]) + '/' + str(assistsList[i]) + '\n'
             else:
-                embedDescription += '**[Match ' + str(i+1) + '](' + trackerggUrlList[i] + ')** ' + ' | ' + playerMatchRecord[i] + ' | ' + mapList[i] + ' | ' + agentList[i] + ' | ' + str(redTeamWins[i]) + '-' + str(blueTeamWins[i]) + ' | ' + str(killsList[i]) + '/' + str(deathsList[i]) + '/' + str(assistsList[i]) + '\n'
+                embedDescription += '**[Match ' + str(i+1) + '](' + trackerggUrlList[i] + ')** ' + ' | ' + playerMatchRecord[i] + ' | ' + mapList[i] + ' | ' + agentList[i] + ' | ' + str(redTeamWins[i]) + '-' + str(blueTeamWins[i]) + ' | ' + str(scoresList[i]) + ' | ' + str(killsList[i]) + '/' + str(deathsList[i]) + '/' + str(assistsList[i]) + '\n'
 
         embedDescription += '\n' + 'For detailed stats about a specific match use command: \n \"!match <region> username#tag <gamemode> <match number>\"'
 
@@ -354,6 +356,8 @@ def get_response(message: str) -> str:
             else:
                 gamemode = valorantTagAndExtras[2]
 
+        print(gamemode)
+
         matchIndex = int(matchIndex)-1
 
         if gamemode == '':
@@ -363,13 +367,13 @@ def get_response(message: str) -> str:
         matchMessage = matchMessage.json()
 
         mapImage = valorantImages.mapIcons[matchMessage['data'][matchIndex]['metadata']['map']]
-        matchURL = trackerggUrl + matchMessage['data'][matchIndex]['metadata']['matchid']
+        matchURL = trackerggMatchUrl + matchMessage['data'][matchIndex]['metadata']['matchid']
         embedDescription = '### **[Tracker.gg Match Link]('+matchURL+')**\n'
 
         for player in matchMessage['data'][matchIndex]['players']['all_players']:
             playerStatsList = []
             tempPlayerpuuid = player['puuid']
-            playerpuuidList.append(tempPlayerpuuid) # MAy not need this
+            playerpuuidList.append(tempPlayerpuuid) # May not need this
             playerStatsList.append(player['name']) #0
             playerStatsList.append(player['team']) #1
             playerStatsList.append(player['character']) #2
@@ -378,6 +382,7 @@ def get_response(message: str) -> str:
             playerStatsList.append(player['stats']['deaths']) #5
             playerStatsList.append(player['stats']['assists']) #6
             playerStatsList.append(player['stats']['score']) #7
+            playerStatsList.append(player['tag']) #8
             playerStatsDict[tempPlayerpuuid] = playerStatsList
 
         for rounds in matchMessage['data'][matchIndex]['rounds']:
@@ -400,15 +405,18 @@ def get_response(message: str) -> str:
             if playerStatsDict[key][1] == 'Blue':
                 tempName = playerStatsDict[key][0]
                 tempCharacter = valorantImages.agentIcons[playerStatsDict[key][2].lower()]
-                tempRank = playerStatsDict[key][3]
+                tempRank = valorantImages.rankIcons[playerStatsDict[key][3]]
                 tempKills = playerStatsDict[key][4]
                 tempDeaths = playerStatsDict[key][5]
                 tempAssists = playerStatsDict[key][6]
                 tempScore = round(playerStatsDict[key][7] / totalRounds, 0)
+                tempFormattedName = tempName.replace(' ','%20')
+                tempUsernamdAndTag = tempFormattedName + '%23' + playerStatsDict[key][8]
+                tempPlayerUrl = trackerggPlayerUrl + tempUsernamdAndTag
                 if key == first_key:
-                    embedDescription += tempCharacter + ' | ' + tempName + ' | ' + tempRank + ' | ' +str(tempScore)[:-2] + ' | ' + str(tempKills) + '/'  + str(tempDeaths) + '/' + str(tempAssists) + ' :star:' +'\n'
+                    embedDescription += tempCharacter + ' | [' + tempName + '](' + tempPlayerUrl + ') | ' + tempRank + ' | ' +str(tempScore)[:-2] + ' | ' + str(tempKills) + '/'  + str(tempDeaths) + '/' + str(tempAssists) + ' :star:' +'\n'
                 else:
-                    embedDescription += tempCharacter + ' | ' + tempName + ' | ' + tempRank + ' | ' +str(tempScore)[:-2] + ' | ' + str(tempKills) + '/'  + str(tempDeaths) + '/' + str(tempAssists) +'\n'
+                    embedDescription += tempCharacter + ' | [' + tempName + '](' + tempPlayerUrl + ') | ' + tempRank + ' | ' +str(tempScore)[:-2] + ' | ' + str(tempKills) + '/'  + str(tempDeaths) + '/' + str(tempAssists) +'\n'
         embedDescription += '\n'
         if redTeamWins < blueTeamWins:
             embedDescription += '**Rounds Won: ' + str(redTeamWins) + '** : \n'
@@ -418,15 +426,18 @@ def get_response(message: str) -> str:
             if playerStatsDict[key][1] == 'Red':
                 tempName = playerStatsDict[key][0]
                 tempCharacter = valorantImages.agentIcons[playerStatsDict[key][2].lower()]
-                tempRank = playerStatsDict[key][3]
+                tempRank = valorantImages.rankIcons[playerStatsDict[key][3]]
                 tempKills = playerStatsDict[key][4]
                 tempDeaths = playerStatsDict[key][5]
                 tempAssists = playerStatsDict[key][6]
+                tempFormattedName = tempName.replace(' ','%20')
                 tempScore = round(playerStatsDict[key][7] / totalRounds, 0)
+                tempUsernamdAndTag = tempFormattedName + '%23' + playerStatsDict[key][8]
+                tempPlayerUrl = trackerggPlayerUrl + tempUsernamdAndTag
                 if key == first_key:
-                    embedDescription += tempCharacter + ' | ' + tempName + ' | ' + tempRank + ' | ' +str(tempScore)[:-2] + ' | ' + str(tempKills) + '/'  + str(tempDeaths) + '/' + str(tempAssists) + ' :star:' +'\n'
+                    embedDescription += tempCharacter + ' | [' + tempName + '](' + tempPlayerUrl + ') | ' + tempRank + ' | ' +str(tempScore)[:-2] + ' | ' + str(tempKills) + '/'  + str(tempDeaths) + '/' + str(tempAssists) + ' :star:' +'\n'
                 else:
-                    embedDescription += tempCharacter + ' | ' + tempName + ' | ' + tempRank + ' | ' +str(tempScore)[:-2] + ' | ' + str(tempKills) + '/'  + str(tempDeaths) + '/' + str(tempAssists) +'\n'
+                    embedDescription += tempCharacter + ' | [' + tempName + '](' + tempPlayerUrl + ') | ' + tempRank + ' | ' +str(tempScore)[:-2] + ' | ' + str(tempKills) + '/'  + str(tempDeaths) + '/' + str(tempAssists) +'\n'
         messageSettings.embed = discord.Embed(title=embedTitle, description=embedDescription)
         messageSettings.hasEmbed = True
         messageSettings.embed.set_thumbnail(url=mapImage)
