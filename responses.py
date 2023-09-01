@@ -7,7 +7,9 @@ import messageSettings
 
 from discord.ui import View, Button
 
-api_key = "HDEV-390054ce-97c2-4ab1-bc0b-96fac25d03f7"
+with open("config.json", "r") as json_file:
+        data = json.load(json_file)
+api_key = data['api_key']
 urlAlt = 'https://api.kyroskoh.xyz'
 url = 'https://api.henrikdev.xyz'
 trackerggMatchUrl = 'https://tracker.gg/valorant/match/'
@@ -21,22 +23,14 @@ headers = {
 def get_response(message: str) -> str:
     # python case sensitive so important to have this
     p_message = message.lower() 
-
-    
-    if p_message == 'roll':
-        messageSettings.embed = discord.Embed(title=random.randint(1,6))
-        return None
     
     if p_message == '!help':
         messageSettings.embed = discord.Embed(title='Click here for documentation',url='https://github.com/M4nchy/valorantBot')
         # Need to work on actual documentation for the bot
         return None
-    
-    if p_message == '!login':
-        return 'login command'
 
     if p_message[:6] == '!stats':
-        # Need to add latam and br catches
+        # !stats na NRG s0m#NRG competitive 10
         valorantUsername = ''
         gameMap = ''
         gamemode = ''
@@ -179,6 +173,7 @@ def get_response(message: str) -> str:
     
     
     if p_message[:11] == '!rankofuser':
+        # !rankofuser na NRG s0m#NRG
         valorantUsername = ''
         allList = p_message[13:].partition('#')
 
@@ -215,21 +210,10 @@ def get_response(message: str) -> str:
         return None
 
     if p_message[:13] == '!matchhistory':
+        # !matchhistory na NRG s0m#NRG
         # make all one line
-        matchIDList = []
-        trackerggUrlList = []
-        agentList = []
-        mapList = []
-        playerTeamList = []
-        playerMatchRecord = []
-        redTeamWins = []
-        blueTeamWins = []
-        killsList = []
-        deathsList = []
-        assistsList, scoresList = [], []
-
-        valorantUsername = ''
-        gamemode = ''
+        matchIDList, trackerggUrlList, agentList, mapList, playerTeamList, playerMatchRecord, redTeamWins, blueTeamWins, killsList, deathsList, assistsList, scoresList = [[] for _ in range(12)]
+        valorantUsername, gamemode = '', ''
         embedTitle = '**Match History**'
         embedDescription = ''
         roundTeamWinsIndex = -1
@@ -299,6 +283,8 @@ def get_response(message: str) -> str:
                     playerMatchRecord.append(':green_circle:')
                 else:
                     playerMatchRecord.append(':red_circle:')
+            if redTeamWins[i] == blueTeamWins[i]:
+                playerMatchRecord.append(':yellow_circle:')
 
         for i in range(len(agentList)):
             agentList[i] = valorantImages.agentIcons[agentList[i].lower()]
@@ -306,6 +292,7 @@ def get_response(message: str) -> str:
         for id in matchIDList:
             matchUrl = trackerggMatchUrl + id
             trackerggUrlList.append(matchUrl)
+        
         for i in range(len(matchIDList)):
             if i>8:
                 embedDescription += '**[Match ' + str(i+1) + '](' + trackerggUrlList[i] + ')** ' + ' | ' + playerMatchRecord[i] + ' | ' + mapList[i] + ' | ' + agentList[i] + ' | ' + str(redTeamWins[i]) + '-' + str(blueTeamWins[i]) + ' | ' + str(scoresList[i]) + ' | ' + str(killsList[i]) + '/' + str(deathsList[i]) + '/' + str(assistsList[i]) + '\n'
@@ -445,10 +432,10 @@ def get_response(message: str) -> str:
         return None
     
     if p_message[:12] == '!careerstats':
+        # !careerstats na NRG s0m#NRG
         # /valorant/v1/lifetime/matches/{affinity}/{name}/{tag}
         gamemode = ''
         valorantUsername = ''
-
         allList = p_message[13:].partition('#')
 
         # Do it this way in order to incorporate spaces in usernames
@@ -520,8 +507,12 @@ def get_response(message: str) -> str:
     return None
 
 
-def returnRankIcon(puuid):
-    mmrMessage = json.loads(requests.get(url+'/valorant/v1/by-puuid/mmr/na/' + puuid).text, headers=headers)
-    print(mmrMessage['data']['images']['small'])
-    return mmrMessage['data']['images']['small']
+def formatCommand(p_message):
+    allList = p_message.partition('#')
+    commandList = []
+
+    # Do it this way in order to incorporate spaces in usernames
+    for i in range(len(allList)):
+        commandList += allList[i].split()
+    return commandList
 
