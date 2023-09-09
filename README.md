@@ -10,7 +10,7 @@ Example:
 !stats <region> <username>#<tag> $(gamemode)
 !stats na TRENTAKER4000#800mg competitive
 
-![alt text]([https://imgur.com/a/Ol9bU47](https://i.imgur.com/OfEkXan_d.webp?maxwidth=760&fidelity=grand))
+![alt text](https://i.imgur.com/O6KjzY9_d.webp?maxwidth=760&fidelity=grand)
 
 !rankofuser
 Returns the rank of the user
@@ -27,7 +27,7 @@ Example:
 !matchhistory <region> <username>#<tag> $(gamemode)
 !matchhistory na TRENTAKER4000#800mg competitive
 
-![alt text](https://imgur.com/a/rNSm5L1)
+![alt text](https://i.imgur.com/j1pLq7N_d.webp?maxwidth=760&fidelity=grand)
 
 !match
 Used in combination with !matchhistory returns a embed of a specific match
@@ -36,4 +36,4 @@ Example:
 !match <region> <username>#<tag> $(gamemode) $(match # to pull)
 !match na TRENTAKER4000#800mg competitive 1
 
-![alt text](https://imgur.com/a/UKX7DZr)
+![alt text](https://i.imgur.com/E7JBo1q_d.webp?maxwidth=760&fidelity=grand)
