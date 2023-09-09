@@ -1,10 +1,10 @@
 # VALORANT Stats Bot
 
 ## Commands with screenshots
-!help<br>
+**!help**<br>
 Returns a link to the github page.<br>
 
-!matchhistory
+**!matchhistory**<br>
 Returns an embed with the match history of the user. Can be gamemmode specific<br>
 Each match is hyperlinked to the tracker.gg match page.<br>
 Example:<br>
@@ -13,7 +13,7 @@ Example:<br>
 
 ![alt text](https://i.imgur.com/j1pLq7N_d.webp?maxwidth=760&fidelity=grand)
 
-!match<br>
+**!match**<br>
 Used in combination with !matchhistory returns a embed of a specific match<br>
 Each player is hyperlinked to their tracker.gg page.<br>
 Example:<br>
@@ -22,7 +22,7 @@ Example:<br>
 
 ![alt text](https://i.imgur.com/E7JBo1q_d.webp?maxwidth=760&fidelity=grand)
 
-!stats<br>
+**!stats**<br>
 Returns general stats of a players recent matches.<br>
 Example: <br>
 !stats {region} {username}#{tag} $(gamemode)<br>
@@ -30,7 +30,7 @@ Example: <br>
 
 ![alt text](https://i.imgur.com/O6KjzY9_d.webp?maxwidth=760&fidelity=grand)
 
-!rankofuser<br>
+**!rankofuser**<br>
 Returns the rank of the user<br>
 Example:<br>
 !rankofuser {region} {username}#{tag}<br>
