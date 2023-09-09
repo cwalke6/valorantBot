@@ -10,7 +10,7 @@ Example:
 !stats <region> <username>#<tag> $(gamemode)
 !stats na TRENTAKER4000#800mg competitive
 
-![alt text](https://imgur.com/a/Ol9bU47)
+![alt text]([https://imgur.com/a/Ol9bU47](https://i.imgur.com/OfEkXan_d.webp?maxwidth=760&fidelity=grand))
 
 !rankofuser
 Returns the rank of the user
