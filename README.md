@@ -18,7 +18,7 @@ Example:
 !rankofuser <region> <username>#<tag>
 !rankofuser na TRENTAKER4000#800mg
 
-![alt text](https://imgur.com/a/CbgvGek)
+![alt text]([https://imgur.com/a/CbgvGek](https://i.imgur.com/Yzo36CW.png))
 
 !matchhistory
 Returns an embed with the match history of the user. Can be gamemmode specific
