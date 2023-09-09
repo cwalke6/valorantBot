@@ -27,6 +27,7 @@ def get_response(message: str) -> str:
     if p_message == '!help':
         messageSettings.embed = discord.Embed(title='Click here for documentation',url='https://github.com/M4nchy/valorantBot')
         # Need to work on actual documentation for the bot
+        messageSettings.hasEmbed = True
         return None
 
     if p_message[:6] == '!stats':
