@@ -1,12 +1,22 @@
 import discord
+import json
 import responses
-
-
+import messageSettings
 
 async def send_message(message, user_message, is_private):
     try:
         response = responses.get_response(user_message)
-        await message.author.send(response) if is_private else await message.channel.send(response) # This format is fucking retarded but im following the tutorial
+        #await message.channel.send(embed=response)
+        if(messageSettings.hasEmbed and messageSettings.hasButtons):
+            await message.author.send(embed=messageSettings.embed, components = messageSettings.buttons) if is_private else await message.channel.send(messageSettings.embed, components=messageSettings.buttons)
+        elif(messageSettings.hasEmbed):
+            await message.author.send(embed=messageSettings.embed) if is_private else await message.channel.send(embed=messageSettings.embed)
+        elif(messageSettings.hasButtons):
+            None
+        else:
+            await message.author.send(response)
+        messageSettings.hasEmbed = False
+        messageSettings.hasButtons = False
         # I think to make it work with dms we need to change the if block of this statement. Since now it is just not doing anything if "is_private == true"
     except Exception as e:
         print(e)
@@ -14,7 +24,10 @@ async def send_message(message, user_message, is_private):
 
 
 def run_discord_bot():
-    TOKEN = 'MTExODM2MTM0NjEyMDA5NzgzMw.GQnzDh.5rjjdmEVdnrQqSXKfBUrxBXM-5aSH06jN4ydEI'
+    with open("config.json", "r") as json_file:
+        data = json.load(json_file)
+
+    TOKEN = data["discord_token"]
     intents = discord.Intents.default() # Look for this as the first thing we might have to change for integration if we find problems
     intents.message_content = True
     client = discord.Client(intents=intents)
