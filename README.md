@@ -1,4 +1,4 @@
-# valorantBot
+# VALORANT Stats Bot
 
 ## Commands with screenshots
 !help
