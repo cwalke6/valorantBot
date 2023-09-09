@@ -407,7 +407,7 @@ def get_response(message: str) -> str:
                     embedDescription += tempCharacter + ' | [' + tempName + '](' + tempPlayerUrl + ') | ' + tempRank + ' | ' +str(tempScore)[:-2] + ' | ' + str(tempKills) + '/'  + str(tempDeaths) + '/' + str(tempAssists) +'\n'
         embedDescription += '\n'
         if redTeamWins < blueTeamWins:
-            embedDescription += '**Rounds Won: ' + str(redTeamWins) + '** : \n'
+            embedDescription += '**Rounds Won: ' + str(redTeamWins) + '** \n'
         else:
             embedDescription += '**Rounds Won: ' + str(redTeamWins) + '** :trophy:\n'
         for key in playerStatsDict:
